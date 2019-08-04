@@ -1,0 +1,37 @@
+{
+  "name": "time-tracker",
+  "version": "1.0.0",
+  "description": "track your time usage",
+  "main": "output/main.js",
+  "devDependencies": {
+    "@types/node": "^12.6.9",
+    "electron": "^6.0.0",
+    "electron-builder": "^21.2.0",
+    "electron-packager": "^14.0.4",
+    "node-sass": "^4.12.0",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.3"
+  },
+  "build": {
+    "appId": "com.taoalpha.TimeTracker",
+    "asar": false,
+    "copyright": "Copyright © Tao Zhou"
+  },
+  "scripts": {
+    "build": "mkdir -p output && tsc && node-sass src/styles -o output/styles",
+    "build:mac": "npm run build && electron-builder",
+    "watch": "tsc -w",
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "start": "npm run build && electron ./output/main.js"
+  },
+  "author": "taoalpha",
+  "license": "ISC",
+  "dependencies": {
+    "@types/chart.js": "^2.7.56",
+    "active-win": "^5.1.2",
+    "chart.js": "^2.8.0",
+    "chartjs-plugin-labels": "^1.1.0",
+    "electron-store": "^4.0.0",
+    "menubar": "^6.0.7"
+  }
+}
