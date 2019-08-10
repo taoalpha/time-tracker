@@ -4,8 +4,9 @@
 import { ipcRenderer } from "electron";
 import * as Chart from "chart.js";
 import { ApplicationTimingMap, TimingItem } from "../types";
-import {getColor, jsonReviver} from "./utils";
-import "./dom-listeners";
+import {getColor, jsonReviver, convertMS} from "./utils";
+import {DataDuration} from "./dom-listeners";
+import {eventify} from "./event-emitter";
 
 const SpecialApps: {[key: string]: string} = {
   loginwindow: "Login Screen",
@@ -14,20 +15,14 @@ const SpecialApps: {[key: string]: string} = {
 const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d');
 let chart: Chart;
 
+window.CHART_CONFIG = eventify({
+  duration: DataDuration.ALL,
+});
+
+// when config changed, re-render
+window.CHART_CONFIG.on("changed", cleanData);
+
 window.TIMING_DATA = new Map<string, ApplicationTimingMap>();
-
-function convertMS(milliseconds: number) {
-  var day, hour, minute, seconds;
-  seconds = Math.floor(milliseconds / 1000);
-  minute = Math.floor(seconds / 60);
-  seconds = seconds % 60;
-  hour = Math.floor(minute / 60);
-  minute = minute % 60;
-  day = Math.floor(hour / 24);
-  hour = hour % 24;
-
-  return `${day ? day + ' d ' : ''}${hour ? hour + " h " : ""}${minute ? minute + " m " : ""}${seconds ? seconds + " s" : ""}`;
-}
 
 let isInDetail = false;
 
@@ -70,9 +65,6 @@ const config: Chart.ChartConfiguration = {
       if (!chartEls.length && isInDetail) {
         // back to app page
         isInDetail = false;
-        config.options.legend = { display: true };
-        config.options.title.text = "Time usage";
-
         cleanData();
         return;
       };
@@ -103,10 +95,9 @@ function updateToDetail(app: string) {
     labels,
   }
 
-  config.options.title.text = "Time usage within " + app;
+  config.options.title.text = `Time usage ${window.CHART_CONFIG.duration ? ` for past ${convertMS(window.CHART_CONFIG.duration * 86400000)}` : ""}within ${app}`;
 
-  // config.type = "horizontalBar";
-  config.options.legend = { display: false };
+  config.options.legend.display = labels.length < 20;
 
   if (!chart) {
     chart = new Chart(ctx, config);
@@ -136,15 +127,28 @@ function cleanData(timingInfo = window.TIMING_DATA) {
     labels,
   }
 
+  config.options.title.text = `Time usage${window.CHART_CONFIG.duration ? ` for past ${convertMS(window.CHART_CONFIG.duration * 86400000)}`: ""}`;
+  config.options.legend.display = labels.length < 20;
+
   if (!chart) {
     chart = new Chart(ctx, config);
   }
   chart.update();
 }
 
-function getDuration(item: TimingItem, date?: string) {
-  if (date) {
-    return item.intervals[date].reduce((acc: number, cur: [number, number]) => acc + cur[1], 0);
+function getDuration(item: TimingItem) {
+  if (window.CHART_CONFIG.duration !== DataDuration.ALL) {
+    let duration = 0;
+    const cDay = new Date();
+    while ((new Date().getTime() - cDay.getTime())  < window.CHART_CONFIG.duration * 86400000) {
+      const dateKey = cDay.toISOString().split("T")[0];
+      if (item.intervals[dateKey]) {
+        duration += item.intervals[dateKey].reduce((acc: number, cur: [number, number]) => acc + cur[1], 0);
+      }
+      // one day back
+      cDay.setDate(cDay.getDate() - 1);
+    }
+    return duration;
   }
 
   // return all
@@ -154,7 +158,5 @@ function getDuration(item: TimingItem, date?: string) {
 // communication channel
 ipcRenderer.on("timing", (_, timingInfo: string) => {
   isInDetail = false;
-  config.options.legend = { display: true };
-  config.options.title.text = "Time usage";
   cleanData(JSON.parse(timingInfo, jsonReviver));
 });

@@ -40,34 +40,42 @@ layer[name=controls] {
     .control-hidden-model {
         display: none;
 
-        + .control-menu {
+        ~ .control-menu {
             display: none;
         }
 
-        &:checked + .control-menu {
+        &:checked ~ .control-trigger:after {
+            border-top: 5px solid black;
+            border-bottom: 5px solid transparent;
+        }
+
+        &:checked ~ .control-menu {
             display: block;
         }
     }
 
     .control-menu {
-        width: 100%;
         padding: 0;
-        margin: 2px 0 0 0;
+        margin: 0px 0px 10px 0px;
         border: 1px solid #ccc;
         border-radius: 4px;
 
         position: absolute;
         bottom: 100%;
+        right: 0px;
 
         box-shadow: 0 0 6px 0 rgba(0,0,0,0.1);
         background-color: #ffffff;
         list-style-type: none;
 
-        li {
+        // menu-item
+        .control-menu-item {
+            position: relative;
             padding: 10px 20px;
             cursor: pointer;
             white-space: nowrap;
 
+            &.active,
             &:hover {
                 background-color: #f6f6f6;
             }
@@ -75,6 +83,17 @@ layer[name=controls] {
             .divider{
                 padding: 0;
                 border-bottom: 1px solid #cccccc;
+            }
+
+            &:hover .control-menu {
+                display: block;
+            }
+
+            // submenu
+            .control-menu {
+                display: none;
+                bottom: 0;
+                right: 100%;
             }
         }
     }

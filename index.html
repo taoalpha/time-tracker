@@ -10,12 +10,22 @@
 
     <layer name="controls">
       <label>
+        <input type="checkbox" class="control-hidden-model">
         <div class="control-trigger">
           Actions
         </div>
-        <input type="checkbox" class="control-hidden-model">
         <ul class="control-menu">
-          <li onclick="onClearStoreClick()">Clear</li>
+          <li class="control-menu-item">
+            Change duration
+            <ul class="control-menu" onclick="onRangeChange(event)">
+              <li class="control-menu-item active">All</li>
+              <li class="control-menu-item" data-value="1">Past 1 day</li>
+              <li class="control-menu-item" data-value="7">Past 1 week</li>
+              <li class="control-menu-item" data-value="30">Past 1 month</li>
+              <li class="control-menu-item" data-value="365">Past 1 year</li>
+            </ul>
+          </li>
+          <li class="control-menu-item" onclick="onClearStoreClick()">Clear</li>
         </ul>
       </label>
     </layer>
