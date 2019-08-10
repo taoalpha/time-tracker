@@ -3,12 +3,18 @@
 // All of the Node.js APIs are available in this process.
 import { ipcRenderer } from "electron";
 import * as Chart from "chart.js";
-import 'chartjs-plugin-labels';
-import { ApplicationTiming, TimingItem } from "../types";
+import { ApplicationTimingMap, TimingItem } from "../types";
+import {getColor, jsonReviver} from "./utils";
+import "./dom-listeners";
+
+const SpecialApps: {[key: string]: string} = {
+  loginwindow: "Login Screen",
+}
 
 const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d');
 let chart: Chart;
-let timingData: { [key: string]: ApplicationTiming } = {};
+
+window.TIMING_DATA = new Map<string, ApplicationTimingMap>();
 
 function convertMS(milliseconds: number) {
   var day, hour, minute, seconds;
@@ -31,11 +37,6 @@ const config: Chart.ChartConfiguration = {
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      labels: {
-        render: 'label',
-      }
-    },
     title: {
       display: true,
       text: 'Time usage'
@@ -69,7 +70,10 @@ const config: Chart.ChartConfiguration = {
       if (!chartEls.length && isInDetail) {
         // back to app page
         isInDetail = false;
-        cleanData(timingData);
+        config.options.legend = { display: true };
+        config.options.title.text = "Time usage";
+
+        cleanData();
         return;
       };
       const activeEl = chartEls[0] as any;
@@ -85,9 +89,9 @@ function updateToDetail(app: string) {
   const data: number[] = [];
   const colors: string[] = [];
   const labels: string[] = [];
-  Object.keys(timingData[app]).forEach(title => {
-    data.push(getDuration(timingData[app][title]));
-    colors.push(getRandomColor());
+  window.TIMING_DATA.get(app).forEach((timingRecord, title) => {
+    data.push(getDuration(timingRecord));
+    colors.push(getColor(title));
     labels.push(title);
   });
 
@@ -102,7 +106,7 @@ function updateToDetail(app: string) {
   config.options.title.text = "Time usage within " + app;
 
   // config.type = "horizontalBar";
-  config.options.legend = {display: false};
+  config.options.legend = { display: false };
 
   if (!chart) {
     chart = new Chart(ctx, config);
@@ -110,15 +114,18 @@ function updateToDetail(app: string) {
   chart.update();
 }
 
-function cleanData(timingInfo: { [key: string]: ApplicationTiming }) {
-  timingData = timingInfo;
+function cleanData(timingInfo = window.TIMING_DATA) {
+  window.TIMING_DATA = timingInfo;
   const data: number[] = [];
   const colors: string[] = [];
   const labels: string[] = [];
-  Object.keys(timingInfo).forEach(app => {
-    data.push(Object.values(timingInfo[app]).reduce((acc, cur) => acc + getDuration(cur), 0));
-    colors.push(getRandomColor());
-    labels.push(app);
+  window.TIMING_DATA.forEach((timingMap, app) => {
+    // ignore some special apps: loginwindow
+    if (!SpecialApps[app]) {
+      data.push([...timingMap.values()].reduce((acc, cur) => acc + getDuration(cur), 0));
+      colors.push(getColor(app));
+      labels.push(app);
+    }
   });
 
   config.data = {
@@ -135,15 +142,6 @@ function cleanData(timingInfo: { [key: string]: ApplicationTiming }) {
   chart.update();
 }
 
-function getRandomColor() {
-  var letters = '0123456789ABCDEF';
-  var color = '#';
-  for (var i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
-
 function getDuration(item: TimingItem, date?: string) {
   if (date) {
     return item.intervals[date].reduce((acc: number, cur: [number, number]) => acc + cur[1], 0);
@@ -153,9 +151,10 @@ function getDuration(item: TimingItem, date?: string) {
   return Object.values(item.intervals).reduce((acc: number, intervals: Array<[number, number]>) => acc + intervals.reduce((acc: number, cur: [number, number]) => acc + cur[1], 0), 0);
 }
 
-ipcRenderer.on("timing", (event, arg) => {
-  cleanData(arg);
+// communication channel
+ipcRenderer.on("timing", (_, timingInfo: string) => {
   isInDetail = false;
   config.options.legend = { display: true };
   config.options.title.text = "Time usage";
+  cleanData(JSON.parse(timingInfo, jsonReviver));
 });

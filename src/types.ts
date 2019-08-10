@@ -1,7 +1,4 @@
-export interface ApplicationTiming {
-  // title-idx
-  [key: string]: TimingItem;
-}
+export type ApplicationTimingMap = Map<string, TimingItem>;
 
 export interface TimingItem {
   // meta info

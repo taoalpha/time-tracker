@@ -19,7 +19,9 @@
   },
   "scripts": {
     "build": "mkdir -p output && tsc && node-sass src/styles -o output/styles",
-    "build:mac": "npm run build && electron-builder",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:win": "npm run build && electron-builder --windows",
     "watch": "tsc -w",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "start": "npm run build && electron ./output/main.js"
@@ -30,7 +32,6 @@
     "@types/chart.js": "^2.7.56",
     "active-win": "^5.1.2",
     "chart.js": "^2.8.0",
-    "chartjs-plugin-labels": "^1.1.0",
     "electron-store": "^4.0.0",
     "menubar": "^6.0.7"
   }

@@ -2,9 +2,16 @@
     "compilerOptions": {
         "moduleResolution": "node",
         "noImplicitAny": true,
+        "downlevelIteration": true,
         "sourceMap": true,
         "outDir": "output",
         "baseUrl": ".",
+        "lib": [
+            "dom",
+            "es5",
+            "es2015.collection",
+            "es2015.iterable"
+        ],
         "paths": {
             "*": [
                 "node_modules/*"

@@ -5,15 +5,20 @@ import { menubar } from "menubar";
 import * as Store from "electron-store";
 
 import * as activeWin from 'active-win';
-import {ApplicationTiming, TimingItem} from "./types";
+import {ApplicationTimingMap, TimingItem} from "./types";
+import {jsonReplacer, jsonReviver} from "./lib/utils";
 
-const store = new Store({
+const store = new Store<Map<string,ApplicationTimingMap>>({
   serialize(value: any) {
     // minimize
-    return JSON.stringify(value);
+    return JSON.stringify(value, jsonReplacer);
+  },
+  deserialize(value: string) {
+    return JSON.parse(value, jsonReviver);
   }
 });
-const timingInfo: {[key: string]: ApplicationTiming} = store.get("timingInfo") as any || {};
+
+const TIMING_DATA_STORE = store.get("timingInfo") || new Map<string, ApplicationTimingMap>(); 
 
 let last_entry: TimingItem;
 
@@ -36,22 +41,22 @@ const mb = menubar({
 setInterval(() => {
   activeWin().then(res => {
     if (!res) return;
-    timingInfo[res.owner.name] = timingInfo[res.owner.name] || {};
-    let appData = timingInfo[res.owner.name];
+    TIMING_DATA_STORE.set(res.owner.name, TIMING_DATA_STORE.get(res.owner.name) || new Map<string, TimingItem>());
+    let appData = TIMING_DATA_STORE.get(res.owner.name);
     let date = new Date().toISOString().split("T")[0];
 
     // record data to window
     if (!last_entry) {
       // first time
-      appData[res.title] = {
+      appData.set(res.title, {
         app: res.owner.name,
         title: res.title,
         path: res.owner.path,
         intervals: {
           [date]: [[Date.now(), 0]],
         }
-      };
-      last_entry = appData[res.title];
+      });
+      last_entry = appData.get(res.title);
     } else if (last_entry.app === res.owner.name && last_entry.title === res.title) {
       // same app && same title
       // update the duration
@@ -69,22 +74,24 @@ setInterval(() => {
 
       // same title exists
       // start with a new interval
-      if (appData[res.title]) {
-        appData[res.title].intervals[date].push([Date.now(), 0]);
+      if (appData.has(res.title)) {
+        const itemData = appData.get(res.title);
+        itemData.intervals[date] = itemData.intervals[date] || [];
+        itemData.intervals[date].push([Date.now(), 0]);
       } else {
-        appData[res.title] = {
+        appData.set(res.title, {
           app: res.owner.name,
           title: res.title,
           path: res.owner.path,
           intervals: {
             [date]: [[Date.now(), 0]],
           }
-        };
+        });
       }
 
-      last_entry = appData[res.title];
+      last_entry = appData.get(res.title);
     }
-  }).then(() => store.set("timingInfo", timingInfo)).catch(console.log);
+  }).then(() => store.set("timingInfo", TIMING_DATA_STORE)).catch(console.log);
 }, 1000);
 
 function toggleWindow() {
@@ -95,7 +102,6 @@ function toggleWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 mb.on("ready", function ready() {
-  // mb.window.webContents.toggleDevTools();
   globalShortcut.register(
     'Cmd+`',
     toggleWindow
@@ -115,9 +121,15 @@ app.on("window-all-closed", () => {
 mb.on("show", async () => {
   // Open the DevTools.
   // mb.window.webContents.openDevTools();
-  mb.window.webContents.send("timing", timingInfo);
+  mb.window.webContents.send("timing", JSON.stringify(TIMING_DATA_STORE, jsonReplacer));
 });
 
-ipcMain.on('sync-timing', (event, arg) => {
-  event.returnValue = timingInfo;
+ipcMain.on('sync_timing', (event, arg) => {
+  event.returnValue = TIMING_DATA_STORE;
+});
+
+ipcMain.on("clear_store", () => {
+  TIMING_DATA_STORE.clear();
+  store.set("timingInfo", TIMING_DATA_STORE);
+  mb.window.webContents.send("timing", TIMING_DATA_STORE);
 });

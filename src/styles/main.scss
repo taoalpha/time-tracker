@@ -1,4 +1,81 @@
 html, body {
     height: 100%;
     min-height: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+
+layer[name=controls] {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+
+    .control-trigger {
+        display: inline-block;
+        border: 1px solid gray;
+        border-radius: 4px;
+        padding: 10px 30px 10px 20px;
+        background-color: #ffffff;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover {
+            background-color: #eeeeee;
+        }
+
+        &:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 5px solid black;
+        }
+    }
+
+    .control-hidden-model {
+        display: none;
+
+        + .control-menu {
+            display: none;
+        }
+
+        &:checked + .control-menu {
+            display: block;
+        }
+    }
+
+    .control-menu {
+        width: 100%;
+        padding: 0;
+        margin: 2px 0 0 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+
+        position: absolute;
+        bottom: 100%;
+
+        box-shadow: 0 0 6px 0 rgba(0,0,0,0.1);
+        background-color: #ffffff;
+        list-style-type: none;
+
+        li {
+            padding: 10px 20px;
+            cursor: pointer;
+            white-space: nowrap;
+
+            &:hover {
+                background-color: #f6f6f6;
+            }
+
+            .divider{
+                padding: 0;
+                border-bottom: 1px solid #cccccc;
+            }
+        }
+    }
 }

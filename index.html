@@ -7,6 +7,18 @@
   </head>
   <body>
     <canvas id="myChart"></canvas>
+
+    <layer name="controls">
+      <label>
+        <div class="control-trigger">
+          Actions
+        </div>
+        <input type="checkbox" class="control-hidden-model">
+        <ul class="control-menu">
+          <li onclick="onClearStoreClick()">Clear</li>
+        </ul>
+      </label>
+    </layer>
   </body>
 
   <script>
