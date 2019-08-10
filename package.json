@@ -1,6 +1,6 @@
 {
   "name": "time-tracker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "track your time usage",
   "main": "output/main.js",
   "devDependencies": {
@@ -18,7 +18,7 @@
     "copyright": "Copyright © Tao Zhou"
   },
   "scripts": {
-    "build": "mkdir -p output && tsc && node-sass src/styles -o output/styles",
+    "build": "mkdir -p output && cp -rf src/assets output && tsc && node-sass src/styles -o output/styles",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "build:win": "npm run build && electron-builder --windows",

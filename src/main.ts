@@ -36,7 +36,7 @@ if (!(TIMING_DATA_STORE instanceof Map)) {
 let last_entry: TimingItem;
 
 const mb = menubar({
-  icon: path.join(__dirname, "/icon.png"),
+  icon: __dirname + "/assets/icon.png",
   showDockIcon: false,
   preloadWindow: true,
   dir: path.join(__dirname, ".."),

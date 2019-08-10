@@ -65,7 +65,7 @@ const config: Chart.ChartConfiguration = {
         }
       }
     },
-    onClick(event, chartEls) {
+    onClick(_, chartEls) {
       if (!chartEls.length && !isInDetail) return;
       if (!chartEls.length && isInDetail) {
         // back to app page
