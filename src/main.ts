@@ -18,7 +18,20 @@ const store = new Store<Map<string,ApplicationTimingMap>>({
   }
 });
 
-const TIMING_DATA_STORE = store.get("timingInfo") || new Map<string, ApplicationTimingMap>(); 
+let TIMING_DATA_STORE = store.get("timingInfo") || new Map<string, ApplicationTimingMap>(); 
+
+// backward compatibility on old data structure
+if (!(TIMING_DATA_STORE instanceof Map)) {
+  const oldData = TIMING_DATA_STORE as any;
+  TIMING_DATA_STORE = new Map<string,ApplicationTimingMap>();
+  Object.keys(oldData).forEach(app => {
+    const appTimingMap = new Map<string, TimingItem>();
+    Object.keys(oldData[app]).forEach(title => {
+      appTimingMap.set(title, oldData[app][title]);
+    });
+    TIMING_DATA_STORE.set(app, appTimingMap);
+  });
+}
 
 let last_entry: TimingItem;
 
