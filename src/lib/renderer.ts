@@ -24,7 +24,7 @@ window.CHART_CONFIG.on("changed", cleanData);
 
 window.TIMING_DATA = new Map<string, ApplicationTimingMap>();
 
-let isInDetail = false;
+let currentFocusedApp = "";
 
 const config: Chart.ChartConfiguration = {
   type: 'doughnut',
@@ -61,27 +61,27 @@ const config: Chart.ChartConfiguration = {
       }
     },
     onClick(_, chartEls) {
-      if (!chartEls.length && !isInDetail) return;
-      if (!chartEls.length && isInDetail) {
+      if (!chartEls.length && !currentFocusedApp) return;
+      if (!chartEls.length && currentFocusedApp) {
         // back to app page
-        isInDetail = false;
+        currentFocusedApp = "";
         cleanData();
         return;
       };
       const activeEl = chartEls[0] as any;
 
       // update to detail on this app
-      updateToDetail(chart.data.labels[activeEl._index] as string);
-      isInDetail = true;
+      currentFocusedApp = chart.data.labels[activeEl._index] as string;
+      updateToDetail();
     }
   }
 };
 
-function updateToDetail(app: string) {
+function updateToDetail() {
   const data: number[] = [];
   const colors: string[] = [];
   const labels: string[] = [];
-  window.TIMING_DATA.get(app).forEach((timingRecord, title) => {
+  window.TIMING_DATA.get(currentFocusedApp).forEach((timingRecord, title) => {
     data.push(getDuration(timingRecord));
     colors.push(getColor(title));
     labels.push(title);
@@ -95,14 +95,7 @@ function updateToDetail(app: string) {
     labels,
   }
 
-  config.options.title.text = `Time usage ${window.CHART_CONFIG.duration ? ` for past ${convertMS(window.CHART_CONFIG.duration * 86400000)}` : ""}within ${app}`;
-
-  config.options.legend.display = labels.length < 20;
-
-  if (!chart) {
-    chart = new Chart(ctx, config);
-  }
-  chart.update();
+  renderChart();
 }
 
 function cleanData(timingInfo = window.TIMING_DATA) {
@@ -127,9 +120,15 @@ function cleanData(timingInfo = window.TIMING_DATA) {
     labels,
   }
 
-  config.options.title.text = `Time usage${window.CHART_CONFIG.duration ? ` for past ${convertMS(window.CHART_CONFIG.duration * 86400000)}`: ""}`;
-  config.options.legend.display = labels.length < 20;
+  renderChart();
+}
 
+function renderChart() {
+  config.options.title.text = `Time usage${window.CHART_CONFIG.duration ? ` for past ${convertMS(window.CHART_CONFIG.duration * 86400000)}` : ""}` +
+    `${currentFocusedApp ? ` within ${currentFocusedApp}` : ""}` +
+    ` (total: ${convertMS((config.data.datasets[0].data as number[]).reduce((acc, cur) => acc + cur, 0))})`;
+  config.options.legend.display = config.data.labels.length < 20;
+ 
   if (!chart) {
     chart = new Chart(ctx, config);
   }
@@ -157,6 +156,6 @@ function getDuration(item: TimingItem) {
 
 // communication channel
 ipcRenderer.on("timing", (_, timingInfo: string) => {
-  isInDetail = false;
+  currentFocusedApp = '';
   cleanData(JSON.parse(timingInfo, jsonReviver));
 });

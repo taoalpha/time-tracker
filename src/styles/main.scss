@@ -11,10 +11,11 @@ layer[name=controls] {
     bottom: 10px;
 
     .control-trigger {
+        position: relative;
         display: inline-block;
         border: 1px solid gray;
         border-radius: 4px;
-        padding: 10px 30px 10px 20px;
+        padding: 10px;
         background-color: #ffffff;
         cursor: pointer;
         white-space: nowrap;
@@ -26,8 +27,7 @@ layer[name=controls] {
         &:after {
             content: '';
             position: absolute;
-            top: 50%;
-            right: 15px;
+            right: 5px;
             transform: translateY(-50%);
             width: 0; 
             height: 0; 
@@ -45,6 +45,7 @@ layer[name=controls] {
         }
 
         &:checked ~ .control-trigger:after {
+            top: 12px;
             border-top: 5px solid black;
             border-bottom: 5px solid transparent;
         }

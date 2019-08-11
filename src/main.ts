@@ -133,7 +133,7 @@ app.on("window-all-closed", () => {
 // send data to renderer
 mb.on("show", async () => {
   // Open the DevTools.
-  // mb.window.webContents.openDevTools();
+  mb.window.webContents.openDevTools();
   mb.window.webContents.send("timing", JSON.stringify(TIMING_DATA_STORE, jsonReplacer));
 });
 
